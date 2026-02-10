@@ -278,7 +278,6 @@ const SYSTEM_PROMPT = `
 - これらは一見バラバラだが、「新しい体験を創り出し、人と人をつなぐ」という共通の糸が通っている
 - 職業の枠にとらわれない「ライフ・アーティスト」
 `;
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
