@@ -76,7 +76,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>村山相談室</title>
+        <title>マルタ村相談室</title>
         <meta name="description" content="完結しない村の哲学を体現した相談室" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
