@@ -84,7 +84,7 @@ export default function Home() {
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
-          <h1 style={styles.title}>村山相談室</h1>
+          <h1 style={styles.title}>マルタ村相談室</h1>
         </div>
 
         {/* Messages */}
