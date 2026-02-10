@@ -279,131 +279,48 @@ const SYSTEM_PROMPT = `
 - 職業の枠にとらわれない「ライフ・アーティスト」
 `;
 
-// Claude API設定
-const CLAUDE_API_KEY = 'claude-3-haiku-20240307'; // 環境変数から読み込むことを推奨
-const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
-
-// 会話履歴を保持
-let conversationHistory = [];
-
-// メッセージ送信関数
-async function sendMessage(userMessage) {
-  // ユーザーメッセージを履歴に追加
-  conversationHistory.push({
-    role: 'user',
-    content: userMessage
-  });
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
   try {
-    const response = await fetch(CLAUDE_API_URL, {
+    const { messages } = req.body;
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: 'API key not configured' });
+    }
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': CLAUDE_API_KEY,
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022', // または claude-3-opus-20240229
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 1024,
         system: SYSTEM_PROMPT,
-        messages: conversationHistory
+        messages: messages,
       })
     });
 
     const data = await response.json();
     
-    if (data.content && data.content[0]) {
-      const assistantMessage = data.content[0].text;
-      
-      // アシスタントの返答を履歴に追加
-      conversationHistory.push({
-        role: 'assistant',
-        content: assistantMessage
+    if (!response.ok) {
+      console.error('Anthropic API error:', data);
+      console.error('Status:', response.status);
+      console.error('API Key exists:', !!process.env.ANTHROPIC_API_KEY);
+      return res.status(response.status).json({ 
+        error: data.error?.message || data.error || 'API error',
+        details: data 
       });
-      
-      return assistantMessage;
-    } else {
-      throw new Error('Invalid response from Claude API');
     }
+
+    res.status(200).json({ content: data.content });
   } catch (error) {
-    console.error('Error calling Claude API:', error);
-    throw error;
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-}
-
-// 会話履歴をリセット
-function resetConversation() {
-  conversationHistory = [];
-}
-
-// DOM要素との連携（例）
-document.addEventListener('DOMContentLoaded', () => {
-  const chatInput = document.getElementById('chat-input');
-  const sendButton = document.getElementById('send-button');
-  const chatMessages = document.getElementById('chat-messages');
-  const resetButton = document.getElementById('reset-button');
-
-  // メッセージ送信
-  sendButton.addEventListener('click', async () => {
-    const userMessage = chatInput.value.trim();
-    if (!userMessage) return;
-
-    // ユーザーメッセージを表示
-    appendMessage('user', userMessage);
-    chatInput.value = '';
-
-    // ローディング表示
-    const loadingElement = appendMessage('assistant', '考えています...');
-
-    try {
-      // Claude APIに送信
-      const assistantMessage = await sendMessage(userMessage);
-      
-      // ローディングを削除してアシスタントの返答を表示
-      loadingElement.remove();
-      appendMessage('assistant', assistantMessage);
-    } catch (error) {
-      loadingElement.remove();
-      appendMessage('assistant', 'すみません、エラーが発生しました。もう一度お試しください。');
-    }
-  });
-
-  // Enterキーで送信
-  chatInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendButton.click();
-    }
-  });
-
-  // 会話リセット
-  if (resetButton) {
-    resetButton.addEventListener('click', () => {
-      resetConversation();
-      chatMessages.innerHTML = '';
-      appendMessage('assistant', 'こんにちは。何か話したいことはありますか？');
-    });
-  }
-
-  // メッセージを画面に追加する関数
-  function appendMessage(role, content) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${role}-message`;
-    messageDiv.textContent = content;
-    chatMessages.appendChild(messageDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    return messageDiv;
-  }
-
-  // 初期メッセージ
-  appendMessage('assistant', 'こんにちは。何か話したいことはありますか？');
-});
-
-// エクスポート（必要に応じて）
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    sendMessage,
-    resetConversation,
-    SYSTEM_PROMPT
-  };
 }
