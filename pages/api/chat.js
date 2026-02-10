@@ -280,7 +280,7 @@ const SYSTEM_PROMPT = `
 `;
 
 // Claude API設定
-const CLAUDE_API_KEY = 'your-api-key-here'; // 環境変数から読み込むことを推奨
+const CLAUDE_API_KEY = 'claude-3-haiku-20240307'; // 環境変数から読み込むことを推奨
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 
 // 会話履歴を保持
